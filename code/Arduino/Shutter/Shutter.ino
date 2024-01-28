@@ -11,10 +11,13 @@
 #define LEARN_DMX_BUTTON_PIN 9
 #define DMX_EEPROM_ADDRESS 0
 
+#define LINEAR_MODE
+
 Servo servo;
 bool lastDMXState = false;
 bool lastManualState = false;
 int lastServo = SHUTTER_LOW;
+uint8_t lastDMXValue = 0;
 long lastMove = -1001;
 
 
@@ -34,6 +37,10 @@ void setup()
 void loop()
 {
   updateLearnDMX();
+  #ifdef LINEAR_MODE
+  getDMXState();
+  updateLinearShutter();
+  #else
   bool currentDMXState = getDMXState();
   bool currentManualState = getManualState();
   if ( currentDMXState != lastDMXState )
@@ -50,6 +57,7 @@ void loop()
   {
     updateSleepMode();
   }
+  #endif
 }
 
 void updateLearnDMX()
@@ -75,10 +83,10 @@ bool getDMXState()
   {
     int address = EEPROM.read(DMX_EEPROM_ADDRESS);
     address += EEPROM.read(DMX_EEPROM_ADDRESS + 1) << 8;
-    int dmxValue = DMXSerial.read(address);
-    analogWrite(PWM_SIGNAL_LED, dmxValue);
     if (dmxValue > 127)
     {
+    lastDMXValue = DMXSerial.read(address);
+    analogWrite(PWM_SIGNAL_LED, lastDMXValue);
       return true;
     }
     else
@@ -114,6 +122,11 @@ void updateSleepMode()
 {
   if ( millis() - lastMove > 1000 )
   {
+void updateLinearShutter() {
+  servo.attach(SERVO_PIN);
+  servo.write(map(lastDMXValue, 0, 254, SHUTTER_LOW, 180));
+  lastMove = millis();
+}
     servo.detach();
   }
 }
