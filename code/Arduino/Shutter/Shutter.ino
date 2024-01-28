@@ -21,8 +21,7 @@ uint8_t lastDMXValue = 0;
 long lastMove = -1001;
 
 
-void setup()
-{
+void setup() {
   pinMode(SIGNAL_LED, OUTPUT);
   pinMode(PWM_SIGNAL_LED, OUTPUT);
   pinMode(MANUAL_MODE_BUTTON, INPUT_PULLUP);
@@ -34,8 +33,7 @@ void setup()
   delay(1000);
 }
 
-void loop()
-{
+void loop() {
   updateLearnDMX();
   #ifdef LINEAR_MODE
   getDMXState();
@@ -43,118 +41,91 @@ void loop()
   #else
   bool currentDMXState = getDMXState();
   bool currentManualState = getManualState();
-  if ( currentDMXState != lastDMXState )
-  {
+  if (currentDMXState != lastDMXState) {
     lastDMXState = currentDMXState;
-    updateShutter( lastDMXState );
-  }
-  else if ( currentManualState != lastManualState )
-  {
+
+    updateShutter(lastDMXState);
+  } else if (currentManualState != lastManualState) {
     lastManualState = currentManualState;
-    updateShutter( lastManualState );
-  }
-  else
-  {
+    updateShutter(lastManualState);
+  } else {
     updateSleepMode();
   }
   #endif
 }
 
-void updateLearnDMX()
-{
-  if ( ! digitalRead(LEARN_DMX_BUTTON_PIN) )
-  {
-    for (int i = 0 ; i < 512 ; i++)
-    {
-      if (DMXSerial.read(i) != 0)
-      {
-        EEPROM.write(DMX_EEPROM_ADDRESS, i & B11111111 );
-        EEPROM.write(DMX_EEPROM_ADDRESS + 1, i  >> 8 & B11111111 );
+void updateLearnDMX() {
+  if (!digitalRead(LEARN_DMX_BUTTON_PIN)) {
+    for (int i = 0; i < 512; i++) {
+      if (DMXSerial.read(i) != 0) {
+        EEPROM.write(DMX_EEPROM_ADDRESS, i & B11111111);
+        EEPROM.write(DMX_EEPROM_ADDRESS + 1, i >> 8 & B11111111);
         blink(3);
       }
     }
   }
 }
 
-bool getDMXState()
-{
+bool getDMXState() {
   unsigned long lastPacket = DMXSerial.noDataSince();
-  if (lastPacket < 1000 )
-  {
+  if (lastPacket < 1000) {
     int address = EEPROM.read(DMX_EEPROM_ADDRESS);
     address += EEPROM.read(DMX_EEPROM_ADDRESS + 1) << 8;
-    if (dmxValue > 127)
-    {
     lastDMXValue = DMXSerial.read(address);
     analogWrite(PWM_SIGNAL_LED, lastDMXValue);
+    if (lastDMXValue > 127) {
       return true;
-    }
-    else
-    {
+    } else {
       return false;
     }
-  }
-  else
-  {
+  } else {
     fastBlink();
   }
 }
 
-bool getManualState()
-{
-  return digitalRead( MANUAL_MODE_BUTTON );
+bool getManualState() {
+  return digitalRead(MANUAL_MODE_BUTTON);
 }
 
-void updateShutter(bool state)
-{
-  if ( state == true )
-  {
+void updateShutter(bool state) {
+  if (state == true) {
     openShutter();
-  }
-  else
-  {
+  } else {
     closeShutter();
   }
   lastMove = millis();
 }
 
-void updateSleepMode()
-{
-  if ( millis() - lastMove > 1000 )
-  {
 void updateLinearShutter() {
   servo.attach(SERVO_PIN);
   servo.write(map(lastDMXValue, 0, 254, SHUTTER_LOW, 180));
   lastMove = millis();
 }
+
+void updateSleepMode() {
+  if (millis() - lastMove > 1000) {
     servo.detach();
   }
 }
 
-void openShutter()
-{
-  if (lastServo != SHUTTER_HIGH)
-  {
+void openShutter() {
+  if (lastServo != SHUTTER_HIGH) {
     servo.attach(SERVO_PIN);
     servo.write(SHUTTER_HIGH);
     lastServo = SHUTTER_HIGH;
   }
 }
 
-void closeShutter()
-{
-  if (lastServo != SHUTTER_LOW)
-  {
+void closeShutter() {
+  if (lastServo != SHUTTER_LOW) {
     servo.attach(SERVO_PIN);
     servo.write(SHUTTER_LOW);
     lastServo = SHUTTER_LOW;
   }
 }
 
-void blink(int occurence)
-{
-  for (int i = 0 ; i < occurence ; i++)
-  {
+void blink(int occurence) {
+  for (int i = 0; i < occurence; i++) {
     digitalWrite(SIGNAL_LED, HIGH);
     digitalWrite(PWM_SIGNAL_LED, HIGH);
     delay(70);
@@ -164,8 +135,7 @@ void blink(int occurence)
   }
 }
 
-void fastBlink()
-{
+void fastBlink() {
   digitalWrite(SIGNAL_LED, HIGH);
   delay(70);
   digitalWrite(SIGNAL_LED, LOW);
@@ -175,4 +145,3 @@ void fastBlink()
   digitalWrite(SIGNAL_LED, LOW);
   delay(300);
 }
-
