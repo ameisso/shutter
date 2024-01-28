@@ -1,0 +1,11 @@
+How to upload on at mega 328PU 
+
+1. Add board : https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
+2.install in board manager 
+3 .board at mega 328 
+Bootloader : yes 
+Clock ext 16MHZ 
+Variant 328/328A 
+
+4. Burn boot loader 
+5. Upload using boot loader	
